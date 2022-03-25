@@ -1,0 +1,79 @@
+---
+title: "Regression with Diamonds dataset"
+output: html_notebook
+---
+
+Hello Everything! I hope you will find this small project useful for your learning. We will conduct a linear regression analysis on the diamonds dataset. Diamonds is a dataset which comes with ggplot2 package and its price column can be a perfect outcome (predicted variable) for us because of its continuous nature. 
+
+So, lets get started...
+
+```{r}
+sessionInfo()
+```
+
+'Corrr' is the package which will help us in getting the correlation between different variables. 'Rsample' will be used to create training and testing datasets.  
+
+```{r}
+library(ggplot2)
+library(dplyr)
+library(corrr)
+library(parsnip)
+library(rsample)
+```
+
+Diamonds dataset have three factor variables and seven numeric/integer variables. A snap of the top part and bottom part is shown as below 
+
+```{r}
+head(diamonds)
+tail(diamonds)
+```
+
+We want numeric variables in our analysis so we remove the factor variables and find the correlation among the remaining variables. 'Correlate' function comes in handy here which is the part of 'corrr' package. 'Fashion' is also a part of 'corrr' package that presents the correlation table in a tidy manner. 
+
+```{r}
+diamonds %>%
+  select(where(~ !is.factor(.x))) %>%
+  correlate() %>%
+  fashion()
+```
+
+We can filter out variables that have very weak correlation, then pull out those variable names, and create our new data with selected varaibles.
+
+```{r}
+high_corrr_variables <- diamonds %>%
+  select(where(~ !is.factor(.x))) %>%
+  correlate() %>%
+  focus(price) %>%
+  arrange(desc(price)) %>%
+  filter(price >0.5 | price < -0.5) %>%
+  fashion() %>%
+  pull(term)
+
+data <- diamonds %>%
+  select(paste0(high_corrr_variables), price)
+
+head(data)
+```
+
+Now we can split our data into training and testing parts, the process that 'rsample' package loves to perform. 
+
+```{r}
+data_split <- initial_split(data, strata = price, prop = 0.9)
+data_training <- training(data_split)
+data_testing <- testing(data_split)
+```
+
+Now create the linear regression model and look at the results. 'Tidy' function from 'broom' package tidy our regression results and presents it in a data frame.
+
+```{r}
+model <- lm(price ~ ., data = data_training)
+summary(model)
+tidy(model)
+```
+
+I hope you liked the notebook and found it helpful! 
+Have a great day. Take care of yourself and your family. 
+
+Signing Off...
+
+
